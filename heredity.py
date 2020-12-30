@@ -143,38 +143,70 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     num_iter=0
     for person in people:
         num_iter+=1
-        num_genes=0
+        
         if person in two_genes:
             num_genes=2
         elif person in one_gene:
             num_genes=1
+        else:
+            num_genes=0
+        
+        trait = person in  have_trait
 
         mother=people[person]["mother"]
         father=people[person]["father"] 
 
         if mother is None and father is None: 
-            prob *= PROBS["gene"][num_genes]
+            prob *= PROBS["gene"][num_genes]*PROBS["trait"][num_genes][trait]
             
         else: 
-            dic_prob={mother:0 , father:0}
-            for parent in dic_prob:
-                dic_prob[parent]=(
-                    0.5 if parent in one_gene else
-                    (1-PROBS["mutation"]) if  parent in two_genes else
-                    PROBS["mutation"]
-                )
-            
-            prob *= (
-                dic_prob[mother]*dic_prob[father] if num_genes == 2 else
-                dic_prob[father]*(1-dic_prob[mother]) + dic_prob[mother]*(1-dic_prob[father]) if num_genes == 1 else
-                (1-dic_prob[mother])*(1-dic_prob[father])
-            )
+            if mother in two_genes:
+                gens_mother=2
+            elif mother in one_gene:
+                gens_mother=1
+            else:
+                gens_mother=0
 
-    prob *= PROBS["trait"][num_genes][person in have_trait]
+            if father in two_genes:
+                gens_father=2
+            elif father in one_gene:
+                gens_father=1
+            else:
+                gens_father=0
+
+
+
+            if num_genes == 2:
+                prob *= calc_prob(gens_mother, True) * calc_prob(gens_father, True)
+            if num_genes == 1:
+                prob *= calc_prob(gens_mother, True) * calc_prob(gens_father, False) + calc_prob(gens_mother, False) * calc_prob(gens_father, True)
+            if num_genes == 0:
+                prob *= calc_prob(gens_mother, False) * calc_prob(gens_father, False)
+                   
+
+            prob *= PROBS["trait"][num_genes][trait]
     
     return prob
 
-            
+def calc_prob(num_genes,inherit):
+    if num_genes == 2:
+        if inherit:
+            return 1 - PROBS["mutation"]
+        else:
+            return PROBS["mutation"]        
+    
+    if num_genes == 1:
+        return 0.5
+
+    if num_genes == 0:
+        if inherit:
+            return PROBS["mutation"]
+        else:
+            return 1 - PROBS["mutation"]
+
+    
+
+         
             
 
 
